@@ -21,7 +21,7 @@
 *.swp
 *.tmp
 *.DS_Store
-
+!/Tether/Task_1/*.log
 # IDE / OS
 
 /.cache/
