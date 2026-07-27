@@ -578,7 +578,7 @@ void ggml_vec_dot_q4_hqq_q8_0(int n, float * GGML_RESTRICT s, size_t bs, const v
         subv1 = vmlaq_n_f32(subv1, vcvtq_f32_s32(m_1), GGML_CPU_FP16_TO_FP32(x1->zero)*GGML_CPU_FP16_TO_FP32(x1->scale)*GGML_CPU_FP16_TO_FP32(y1->d));
     }
 
-    sumf = vaddvq_f32(sumv0) + vaddvq_f32(sumv1) - vaddvq_f32(subv10) - vaddvq_f32(subv1);
+    sumf = vaddvq_f32(sumv0) + vaddvq_f32(sumv1) - vaddvq_f32(subv0) - vaddvq_f32(subv1);
 #endif
     for (; ib < nb; ++ib) {
         float sumi0 = 0;
