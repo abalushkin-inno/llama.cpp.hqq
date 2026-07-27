@@ -267,7 +267,7 @@ void quantize_q4_0(device const float * src, device block_q4_0 & dst) {
     }
 
     const float d = max / -8;
-    const float id = scale ? 1.0f/d : 0.0f;
+    const float id = d ? 1.0f/d : 0.0f;
 
     dst.d = d;
 
@@ -297,7 +297,7 @@ void quantize_q4_hqq(device const float * src, device block_q4_hqq & dst) {
     }
 
     const float scale = (max-min) / -15.0f;
-    const float iscale = d ? 1.0f/d : 0.0f;
+    const float iscale = scale ? 1.0f/scale : 1.0f;
 
     const float zero  = - min * iscale;
     
@@ -3699,7 +3699,7 @@ kernel void kernel_mul_mv_q4_hqq_f32(
         uint3  tgpig[[threadgroup_position_in_grid]],
         ushort tiisg[[thread_index_in_simdgroup]],
         ushort sgitg[[simdgroup_index_in_threadgroup]]) {
-    mul_vec_q_n_f32_impl<block_q4_HQQ, N_R0_Q4_HQQ, constant ggml_metal_kargs_mul_mv &>(args, src0, src1, dst, shmem, tgpig, tiisg, sgitg);
+    mul_vec_q_n_f32_impl<block_q4_hqq, N_R0_Q4_HQQ, constant ggml_metal_kargs_mul_mv &>(args, src0, src1, dst, shmem, tgpig, tiisg, sgitg);
 }
 
 kernel void kernel_mul_mv_q4_1_f32(
@@ -7445,7 +7445,7 @@ template [[host_name("kernel_flash_attn_ext_vec_f16_dk576_dv512")]]  kernel flas
 template [[host_name("kernel_flash_attn_ext_vec_bf16_dk576_dv512")]] kernel flash_attn_ext_vec_t kernel_flash_attn_ext_vec<FA_TYPES,     bfloat4,    1, dequantize_bf16_t4, bfloat4,     1, dequantize_bf16_t4, 576, 512, 2>;
 #endif
 template [[host_name("kernel_flash_attn_ext_vec_q4_0_dk576_dv512")]] kernel flash_attn_ext_vec_t kernel_flash_attn_ext_vec<FA_TYPES,     block_q4_0, 8, dequantize_q4_0_t4, block_q4_0,  8, dequantize_q4_0_t4, 576, 512, 2>;
-template [[host_name("kernel_flash_attn_ext_vec_q4_hqq_dk576_dv512")]] kernel flash_attn_ext_vec_t kernel_flash_attn_ext_vec<FA_TYPES,     block_q4_hqq, 8, dequantize_q4_hqq_t4, block_q_hqq,  8, dequantize_q4_hqq_t4, 576, 512, 2>;
+template [[host_name("kernel_flash_attn_ext_vec_q4_hqq_dk576_dv512")]] kernel flash_attn_ext_vec_t kernel_flash_attn_ext_vec<FA_TYPES,     block_q4_hqq, 8, dequantize_q4_hqq_t4, block_q4_hqq,  8, dequantize_q4_hqq_t4, 576, 512, 2>;
 template [[host_name("kernel_flash_attn_ext_vec_q4_1_dk576_dv512")]] kernel flash_attn_ext_vec_t kernel_flash_attn_ext_vec<FA_TYPES,     block_q4_1, 8, dequantize_q4_1_t4, block_q4_1,  8, dequantize_q4_1_t4, 576, 512, 2>;
 template [[host_name("kernel_flash_attn_ext_vec_q5_0_dk576_dv512")]] kernel flash_attn_ext_vec_t kernel_flash_attn_ext_vec<FA_TYPES,     block_q5_0, 8, dequantize_q5_0_t4, block_q5_0,  8, dequantize_q5_0_t4, 576, 512, 2>;
 template [[host_name("kernel_flash_attn_ext_vec_q5_1_dk576_dv512")]] kernel flash_attn_ext_vec_t kernel_flash_attn_ext_vec<FA_TYPES,     block_q5_1, 8, dequantize_q5_1_t4, block_q5_1,  8, dequantize_q5_1_t4, 576, 512, 2>;
