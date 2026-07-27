@@ -77,7 +77,11 @@ void iter(inout FLOAT_TYPE temp[NUM_COLS][NUM_ROWS], const uint first_row, const
             vec4 v = dequantize4(ib, iqs, a_offset);
             vec4 v2 = dequantize4(ib, iqs+(4/QUANT_R), a_offset);
 
+#if defined(DATA_A_Q4_HQQ)
+            const vec2 dm = get_scale(ib, a_offset);
+#else
             const vec2 dm = get_dm(ib, a_offset);
+#endif
             if (dm.y != 0) { // quant has min component
                 v = v * dm.x + dm.y;
                 v2 = v2 * dm.x + dm.y;

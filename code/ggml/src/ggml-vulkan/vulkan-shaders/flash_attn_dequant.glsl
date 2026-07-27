@@ -19,6 +19,8 @@ layout (binding = 2) readonly buffer V_PACKED_F32  { vec4 data[]; }             
 
 layout (binding = 1) readonly buffer K_PACKED_Q4_0 { block_q4_0_packed16 data[]; } k_packed_q4_0;
 layout (binding = 2) readonly buffer V_PACKED_Q4_0 { block_q4_0_packed16 data[]; } v_packed_q4_0;
+layout (binding = 1) readonly buffer K_PACKED_Q4_HQQ { block_q4_hqq_packed16 data[]; } k_packed_q4_hqq;
+layout (binding = 2) readonly buffer V_PACKED_Q4_HQQ { block_q4_hqq_packed16 data[]; } v_packed_q4_hqq;
 layout (binding = 1) readonly buffer K_PACKED_Q4_1 { block_q4_1_packed16 data[]; } k_packed_q4_1;
 layout (binding = 2) readonly buffer V_PACKED_Q4_1 { block_q4_1_packed16 data[]; } v_packed_q4_1;
 layout (binding = 1) readonly buffer K_PACKED_Q5_0 { block_q5_0_packed16 data[]; } k_packed_q5_0;
@@ -50,6 +52,17 @@ layout (binding = 1) readonly buffer K_PACKED_Q5_1_P32 { block_q5_1_packed32 dat
     FLOAT_TYPEV4 nibbles = FLOAT_TYPEV4(vui_lo & 0xF, (vui_lo >> 8) & 0xF,                        \
                                         vui_hi & 0xF, (vui_hi >> 8) & 0xF);                       \
     return FLOAT_TYPE(BUF.data[a_offset + ib].d) * (nibbles - FLOAT_TYPE(8.0f));                  \
+}
+
+#define FA_DEQUANT4_Q4_HQQ(BUF) {                                                                             \
+    uint vui_lo = uint(BUF.data[a_offset + ib].qs[(iqs & 0xF) / 2 + 0]);                                      \
+    uint vui_hi = uint(BUF.data[a_offset + ib].qs[(iqs & 0xF) / 2 + 1]);                                      \
+    uint shift = (iqs & 0x10) >> 2;                                                                           \
+    vui_lo >>= shift;                                                                                         \
+    vui_hi >>= shift;                                                                                         \
+    FLOAT_TYPEV4 nibbles = FLOAT_TYPEV4(vui_lo & 0xF, (vui_lo >> 8) & 0xF,                                    \
+                                        vui_hi & 0xF, (vui_hi >> 8) & 0xF);                                   \
+    return FLOAT_TYPE(BUF.data[a_offset + ib].scale) * (nibbles - FLOAT_TYPE(BUF.data[a_offset + ib].zero));  \
 }
 
 #define FA_DEQUANT4_Q4_1(BUF) {                                                                   \
@@ -110,6 +123,7 @@ FLOAT_TYPEV4 dequantize4(uint ib, uint iqs, uint a_offset, uint binding_idx) {
         switch (FaTypeK) {
             case FA_TYPE_F32:  FA_DEQUANT4_F32 (k_packed_f32)
             case FA_TYPE_Q4_0: FA_DEQUANT4_Q4_0(k_packed_q4_0)
+            case FA_TYPE_Q4_HQQ: FA_DEQUANT4_Q4_HQQ(k_packed_q4_hqq)
             case FA_TYPE_Q4_1: FA_DEQUANT4_Q4_1(k_packed_q4_1)
             case FA_TYPE_Q5_0: FA_DEQUANT4_Q5_0(k_packed_q5_0)
             case FA_TYPE_Q5_1: FA_DEQUANT4_Q5_1(k_packed_q5_1)
@@ -120,6 +134,7 @@ FLOAT_TYPEV4 dequantize4(uint ib, uint iqs, uint a_offset, uint binding_idx) {
         switch (FaTypeV) {
             case FA_TYPE_F32:  FA_DEQUANT4_F32 (v_packed_f32)
             case FA_TYPE_Q4_0: FA_DEQUANT4_Q4_0(v_packed_q4_0)
+            case FA_TYPE_Q4_HQQ: FA_DEQUANT4_Q4_HQQ(v_packed_q4_hqq)
             case FA_TYPE_Q4_1: FA_DEQUANT4_Q4_1(v_packed_q4_1)
             case FA_TYPE_Q5_0: FA_DEQUANT4_Q5_0(v_packed_q5_0)
             case FA_TYPE_Q5_1: FA_DEQUANT4_Q5_1(v_packed_q5_1)
