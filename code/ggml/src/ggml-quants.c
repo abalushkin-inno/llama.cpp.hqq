@@ -134,7 +134,7 @@ void quantize_row_q4_hqq_ref(const float * GGML_RESTRICT x, block_q4_hqq * GGML_
 
         const float zero  = - min * iscale;
 
-        y[i].scale = GGML_FP32_TO_FP16(scale);
+        y[i].scale = GGML_FP32_TO_FP16(scale ? scale : 1.0);
         y[i].zero = GGML_FP32_TO_FP16(zero);
 
         for (int j = 0; j < qk/2; ++j) {
