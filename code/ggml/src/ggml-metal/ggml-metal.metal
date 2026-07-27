@@ -170,7 +170,7 @@ void dequantize_q1_0_t4(device const block_q1_0 * xb, short il, thread type4 & r
 
 template <typename type4x4>
 void dequantize_q4_0(device const block_q4_0 * xb, short il, thread type4x4 & reg) {
-    device const uint16_t * qs = ((device const uint16_t *)xb + 2);
+    device const uint16_t * qs = ((device const uint16_t *)xb + 1);
     const float d1 = il ? (xb->d / 16.h) : xb->d;
     const float d2 = d1 / 256.f;
     const float md = -8.h * xb->d;
@@ -189,7 +189,7 @@ void dequantize_q4_0(device const block_q4_0 * xb, short il, thread type4x4 & re
 
 template <typename type4x4>
 void dequantize_q4_hqq(device const block_q4_hqq * xb, short il, thread type4x4 & reg) {
-    device const uint16_t * qs = ((device const uint16_t *)xb + 1);
+    device const uint16_t * qs = ((device const uint16_t *)xb + 2);
     const float d1 = il ? (xb->scale / 16.h) : xb->scale;
     const float d2 = d1 / 256.f;
     const float md = - xb->zero * xb->scale;
@@ -271,9 +271,9 @@ void quantize_q4_0(device const float * src, device block_q4_0 & dst) {
 
     dst.d = d;
 
-    for (int j = 0; j < QK4_HQQ/2; ++j) {
+    for (int j = 0; j < QK4_0/2; ++j) {
         const float x0 = src[0       + j]*id;
-        const float x1 = src[QK4_HQQ/2 + j]*id;
+        const float x1 = src[QK4_0/2 + j]*id;
 
         const uint8_t xi0 = MIN(15, (int8_t)(x0 + 8.5f));
         const uint8_t xi1 = MIN(15, (int8_t)(x1 + 8.5f));
@@ -299,14 +299,14 @@ void quantize_q4_hqq(device const float * src, device block_q4_hqq & dst) {
     const float scale = (max-min) / -15.0f;
     const float iscale = scale ? 1.0f/scale : 1.0f;
 
-    const float zero  = - min * iscale;
+    const float zero  = min * iscale;
     
     dst.scale = scale;
     dst.zero = zero;
 
-    for (int j = 0; j < QK4_0/2; ++j) {
-        const float x0 = src[0       + j]*iscale + zero;
-        const float x1 = src[QK4_0/2 + j]*iscale + zero;
+    for (int j = 0; j < QK4_HQQ/2; ++j) {
+        const float x0 = src[0       + j]*iscale - zero;
+        const float x1 = src[QK4_HQQ/2 + j]*iscale - zero;
 
         const uint8_t xi0 = MIN(15, (int8_t)(x0 + 0.5f));
         const uint8_t xi1 = MIN(15, (int8_t)(x1 + 0.5f));
