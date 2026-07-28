@@ -1049,6 +1049,7 @@ private:
             // progress callback
             mparams.progress_callback           = load_progress_callback;
             mparams.progress_callback_user_data = &load_progress_mmproj;
+            mparams.device           = params.mmproj_devices.empty() ? nullptr : &params.mmproj_devices[0];
         }
 
         // optionally get the memory usage of mmproj

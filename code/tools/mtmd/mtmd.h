@@ -112,6 +112,8 @@ struct mtmd_context_params {
     // If it returns false, model loading is immediately aborted.
     mtmd_progress_callback progress_callback;
     void * progress_callback_user_data;
+
+    ggml_backend_dev_t* device;
 };
 
 MTMD_API const char * mtmd_default_marker(void);
