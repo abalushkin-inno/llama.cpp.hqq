@@ -59,6 +59,39 @@ void quantize(uint dst_idx, uint src_idx)
 }
 #endif
 
+#if defined(DATA_A_Q4_HQQ)
+void quantize(uint dst_idx, uint src_idx)
+{
+    float vmin = data_s[src_idx];
+    float vmax = data_s[src_idx];
+
+    [[unroll]] for (int j = 1; j < QUANT_K_Q4_0; ++j) {
+        const float v = data_s[src_idx + j];
+        if (vmax < v)
+            vmax = v;
+        if (vmin > v)
+            vmin = v;
+    }
+
+    const float scale  = (vmax-vmin) / 15;
+    const float iscale = (scale != 0.0) ? 1.0/scale : 0.0;
+    const float zero  = vmin;
+
+    data_q[dst_idx].scale = float16_t(scale);
+    data_q[dst_idx].zero = float16_t(-zero);
+
+    [[unroll]] for (int j = 0; j < QUANT_K_Q4_0/2; ++j) {
+        const float x0 = data_s[src_idx + 0              + j]*iscale;
+        const float x1 = data_s[src_idx + QUANT_K_Q4_0/2 + j]*iscale;
+
+        const uint xi0 = min(15, int(x0 - vmin*iscale + 0.5));
+        const uint xi1 = min(15, int(x1 - vmin*iscale + 0.5));
+
+        data_q[dst_idx].qs[j]  = uint8_t(xi0 | (xi1 << 4));
+    }
+}
+#endif
+
 #if defined(DATA_A_Q4_1)
 void quantize(uint dst_idx, uint src_idx)
 {

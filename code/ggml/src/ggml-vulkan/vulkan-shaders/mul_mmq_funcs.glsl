@@ -56,6 +56,45 @@ ACC_TYPE mmq_dot_product(const uint ib_a) {
 }
 #endif
 
+#if defined(DATA_A_Q4_HQQ)
+// 2-byte loads for Q4_HQQ blocks (20 bytes)
+void block_a_to_shmem(const uint buf_ib, const uint ib, const uint iqs) {
+    buf_a[buf_ib].qs[iqs] = pack32(u16vec2(data_a_packed16[ib].qs[iqs * 2],
+                                           data_a_packed16[ib].qs[iqs * 2 + 1]));
+
+    if (iqs == 0) {
+        buf_a[buf_ib].scale_1 = FLOAT_TYPE(data_a_packed16[ib].scale);
+        buf_a[buf_ib].zero_1 = FLOAT_TYPE(data_a_packed16[ib].zero);
+    }
+}
+
+void block_a_to_registers(const uint reg_ib, const uint buf_ib) {
+    cache_a[reg_ib].scale_1 = buf_a[buf_ib].scale_1;
+    cache_a[reg_ib].zero_1 = buf_a[buf_ib].zero_1;
+
+    [[unroll]] for (uint iqs = 0; iqs < 4; iqs++) {
+        cache_a[reg_ib].qs[iqs] = buf_a[buf_ib].qs[iqs];
+    }
+}
+
+ACC_TYPE mmq_dot_product(const uint ib_a) {
+    int32_t q_sum = 0;
+    [[unroll]] for (uint iqs = 0; iqs < 4; iqs++) {
+        const uint32_t vui = cache_a[ib_a].qs[iqs];
+        const i32vec2 qs_a = i32vec2( vui       & 0x0F0F0F0F,
+                                     (vui >> 4) & 0x0F0F0F0F);
+
+        const int32_t qs_b0 = cache_b.qs[iqs];
+        const int32_t qs_b1 = cache_b.qs[iqs + 4];
+
+        q_sum += dotPacked4x8EXT(qs_a.x, qs_b0);
+        q_sum += dotPacked4x8EXT(qs_a.y, qs_b1);
+    }
+
+    return ACC_TYPE(float(cache_a[ib_a].scale_1) * (float(q_sum) * float(cache_b.ds.x) - FLOAT_TYPE(cache_a[ib_a].zero_1) * float(cache_b.ds.y)));
+}
+#endif
+
 #if defined(DATA_A_Q5_0) || defined(DATA_A_Q5_1)
 // 2-byte loads for Q5_0 blocks (22 bytes)
 // 4-byte loads for Q5_1 blocks (24 bytes)

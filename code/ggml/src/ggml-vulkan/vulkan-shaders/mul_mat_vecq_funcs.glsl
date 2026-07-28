@@ -10,6 +10,17 @@ FLOAT_TYPE get_dm(uint ib) {
 }
 #endif
 
+#if defined(DATA_A_Q4_HQQ)
+FLOAT_TYPE get_scale(uint ib) {
+    return FLOAT_TYPE(data_a[ib].scale);
+}
+
+FLOAT_TYPE get_zero(uint ib) {
+    return FLOAT_TYPE(data_a[ib].zero);
+}
+#endif
+
+
 #if defined(DATA_A_Q4_1) || defined(DATA_A_Q5_1)
 FLOAT_TYPEV2 get_dm(uint ib) {
     return FLOAT_TYPEV2(data_a_packed32[ib].dm);
@@ -42,6 +53,22 @@ i32vec2 repack(uint ib, uint iqs) {
 
 FLOAT_TYPE mul_q8_1(const int32_t q_sum, const float da, const vec2 dsb, const int32_t sum_divisor) {
     return FLOAT_TYPE(da * (float(q_sum) * dsb.x - (8 / sum_divisor) * dsb.y));
+}
+#endif
+
+// Each iqs value maps to a 32-bit integer
+#if defined(DATA_A_Q4_HQQ)
+// 2-byte loads for Q4_HQQ blocks (20 bytes)
+i32vec2 repack(uint ib, uint iqs) {
+    const u16vec2 quants = u16vec2(data_a_packed16[ib].qs[iqs * 2    ],
+                                   data_a_packed16[ib].qs[iqs * 2 + 1]);
+    const uint32_t vui = pack32(quants);
+    return i32vec2( vui       & 0x0F0F0F0F,
+                   (vui >> 4) & 0x0F0F0F0F);
+}
+
+FLOAT_TYPE mul_q8_1(const int32_t q_sum, const float scale, const float zero, const vec2 dsb, const int32_t sum_divisor) {
+    return FLOAT_TYPE(scale * (float(q_sum) * dsb.x - (zero) * dsb.y));
 }
 #endif
 
@@ -150,8 +177,12 @@ FLOAT_TYPE mmvq_dot_product(const uint ib_a, const uint iqs) {
                              cache_b_qs[1]);
 #endif
 
+#if defined(DATA_A_Q4_HQQ)
+    return mul_q8_1(q_sum, get_scale(ib_a), get_zero(ib_a), cache_b_ds, 4);
+#else
     // 2 quants per call => divide sums by 8/2 = 4
     return mul_q8_1(q_sum, get_dm(ib_a), cache_b_ds, 4);
+#endif
 }
 #endif
 

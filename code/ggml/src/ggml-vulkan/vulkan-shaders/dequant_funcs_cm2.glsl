@@ -77,6 +77,39 @@ f16vec4 dequantFuncQ4_0_v(const in decodeBufQ4_0 bl, const in uint blockCoords[2
     return f16vec4((vec4(q) - vec4(8.0)) * vec4(float(d)));
 }
 
+layout(buffer_reference, std430, buffer_reference_align = 2) buffer decodeBufQ4_hqq {
+   block_q4_hqq_packed16 block;
+};
+
+float16_t dequantFuncQ4_hqq(const in decodeBufQ4_hqq bl, const in uint blockCoords[2], const in uint coordInBlock[2])
+{
+    const float16_t scale = bl.block.scale;
+    const float16_t zero = bl.block.zero;
+    const uint idx = coordInBlock[1];
+    const uint shift = (idx & 0x10) >> 2;
+    uint32_t qs = uint32_t(bl.block.qs[(idx & 0xE) >> 1]);
+    qs >>= shift;
+    qs &= 0x0F0F;
+    qs = unpack8(qs)[idx & 1];
+    float16_t ret = (float16_t(qs) - zero) * scale;
+    return ret;
+}
+
+f16vec4 dequantFuncQ4_hqq_v(const in decodeBufQ4_hqq bl, const in uint blockCoords[2], const in uint coordInBlock[2])
+{
+    const float16_t scale = bl.block.scale;
+    const float16_t zero = bl.block.zero;
+    const uint idx = coordInBlock[1];
+    const uint shift = (idx & 0x10) >> 2;     // 0 or 4
+    const uint qs_i = (idx & 0xE) >> 1;       // even, in {0,2,4,6}
+    const uint qsw = uint32_t(bl.block.qs[qs_i    ])
+                   | (uint32_t(bl.block.qs[qs_i + 1u]) << 16);
+    // shift in {0,4}: per-byte mask 0x0F isolates the wanted nibble in each byte.
+    const uint q4   = (qsw >> shift) & 0x0F0F0F0Fu;
+    const u8vec4 q  = unpack8(q4);
+    return f16vec4((vec4(q) - vec4(float(zero))) * vec4(float(scale)));
+}
+
 layout(buffer_reference, std430, buffer_reference_align = 4) buffer decodeBufQ4_1 {
    block_q4_1 block;
 };
@@ -1307,6 +1340,9 @@ f16vec4 dequantFuncNVFP4_v(const in decodeBufNVFP4 bl, const in uint blockCoords
 #elif defined(DATA_A_Q4_0)
 #define dequantFuncA dequantFuncQ4_0
 #define dequantFuncA_v dequantFuncQ4_0_v
+#elif defined(DATA_A_Q4_HQQ)
+#define dequantFuncA dequantFuncQ4_hqq
+#define dequantFuncA_v dequantFuncQ4_hqq_v
 #elif defined(DATA_A_Q4_1)
 #define dequantFuncA dequantFuncQ4_1
 #define dequantFuncA_v dequantFuncQ4_1_v
