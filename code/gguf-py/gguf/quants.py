@@ -252,6 +252,48 @@ class Q4_0(__Quant, qtype=GGMLQuantizationType.Q4_0):
         return (d * qs.astype(np.float32))
 
 
+class Q4_HQQ(__Quant, qtype=GGMLQuantizationType.Q4_HQQ):
+    @classmethod
+    def quantize_blocks(cls, blocks: np.ndarray) -> np.ndarray:
+        # print('!!!!!!!!!!!!!!!!!!!!!!')
+        n_blocks = blocks.shape[0]
+
+        max = blocks.max(axis=-1, keepdims=True)
+        min = blocks.min(axis=-1, keepdims=True)
+
+        scale = (max - min) / 15.0
+        scale = np.where(scale == 0, 1, scale)
+
+        with np.errstate(divide="ignore"):
+            iscale = 1 / scale
+        zero = -min * iscale
+        qs = np.trunc(((blocks) * iscale + zero) + np.float32(0.5), dtype=np.float32).astype(np.uint8).clip(0, 15)
+
+        qs = qs.reshape((n_blocks, 2, cls.block_size // 2))
+        qs = qs[..., 0, :] | (qs[..., 1, :] << np.uint8(4))
+
+        scale = scale.astype(np.float16).view(np.uint8)
+        zero = zero.astype(np.float16).view(np.uint8)
+
+        res = np.concatenate([scale, zero, qs], axis=-1)
+        return res
+
+    @classmethod
+    def dequantize_blocks(cls, blocks: np.ndarray) -> np.ndarray:
+        n_blocks = blocks.shape[0]
+
+        scale, rest = np.hsplit(blocks, [2])
+        zero, qs = np.hsplit(rest, [2])
+
+        scale = scale.view(np.float16).astype(np.float32)
+        zero = zero.view(np.float16).astype(np.float32)
+
+        qs = qs.reshape((n_blocks, -1, 1, cls.block_size // 2)) >> np.array([0, 4], dtype=np.uint8).reshape((1, 1, 2, 1))
+        qs = (qs & np.uint8(0x0F)).reshape((n_blocks, -1)).astype(np.int8)
+
+        return scale * (qs.astype(np.float32) - zero)
+
+
 class Q4_1(__Quant, qtype=GGMLQuantizationType.Q4_1):
     @classmethod
     def quantize_blocks(cls, blocks: np.ndarray) -> np.ndarray:
