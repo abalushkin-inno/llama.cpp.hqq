@@ -1,4 +1,5 @@
 #version 450
+#ifdef DEV_HQQ
 
 #include "dequant_head.glsl"
 
@@ -25,7 +26,8 @@ void main() {
     const float zero = float(data_a[ib].zero);
 
     [[unroll]] for (uint l = 0; l < 8; ++l) {
-        data_b[b_idx + l +  0] = D_TYPE(scale * ((data_a[ib].qs[q_idx + l] & 0xF) - zero));
-        data_b[b_idx + l + 16] = D_TYPE(scale * ((data_a[ib].qs[q_idx + l] >>  4) - zero));
+        data_b[b_idx + l +  0] = D_TYPE(scale * (data_a[ib].qs[q_idx + l] & 0xF) - zero);
+        data_b[b_idx + l + 16] = D_TYPE(scale * (data_a[ib].qs[q_idx + l] >>  4) - zero);
     }
 }
+#endif

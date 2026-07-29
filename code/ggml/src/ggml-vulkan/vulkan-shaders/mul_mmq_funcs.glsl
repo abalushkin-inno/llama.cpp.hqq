@@ -91,7 +91,7 @@ ACC_TYPE mmq_dot_product(const uint ib_a) {
         q_sum += dotPacked4x8EXT(qs_a.y, qs_b1);
     }
 
-    return ACC_TYPE(float(cache_a[ib_a].scale_1) * (float(q_sum) * float(cache_b.ds.x) - FLOAT_TYPE(cache_a[ib_a].zero_1) * float(cache_b.ds.y)));
+    return ACC_TYPE(float(cache_a[ib_a].scale_1) * float(q_sum) * float(cache_b.ds.x) - FLOAT_TYPE(cache_a[ib_a].zero_1) * float(cache_b.ds.y));
 }
 #endif
 

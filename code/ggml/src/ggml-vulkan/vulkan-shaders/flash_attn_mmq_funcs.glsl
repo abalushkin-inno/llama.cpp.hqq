@@ -11,6 +11,7 @@ int32_t get_k_qs(uint ib, uint iqs, uint a_offset) {
             vui >>= shift;
             return int32_t(vui & 0x0F0F0F0F);
         }
+#ifdef DEV_HQQ
         case FA_TYPE_Q4_HQQ: {
             uint vui = pack32(u16vec2(k_packed_q4_hqq.data[a_offset + ib].qs[(iqs & 0xF) / 2 + 0],
                                       k_packed_q4_hqq.data[a_offset + ib].qs[(iqs & 0xF) / 2 + 1]));
@@ -18,6 +19,7 @@ int32_t get_k_qs(uint ib, uint iqs, uint a_offset) {
             vui >>= shift;
             return int32_t(vui & 0x0F0F0F0F);
         }
+#endif
         case FA_TYPE_Q4_1: { // uses packed32 alias
             uint vui = k_packed_q4_1_p32.data[a_offset + ib].qs[(iqs & 0xF) / 4];
             uint shift = (iqs & 0x10) >> 2;
@@ -55,7 +57,9 @@ int32_t get_k_qs(uint ib, uint iqs, uint a_offset) {
 FLOAT_TYPEV2 get_k_scale(uint ib, uint a_offset) {
     switch (FaTypeK) {
         case FA_TYPE_Q4_0: return FLOAT_TYPEV2(FLOAT_TYPE(k_packed_q4_0.data[a_offset + ib].d), 0.0);
+#ifdef DEV_HQQ
         case FA_TYPE_Q4_HQQ: return FLOAT_TYPEV2(FLOAT_TYPE(k_packed_q4_hqq.data[a_offset + ib].scale), 0.0);
+#endif
         case FA_TYPE_Q4_1: return FLOAT_TYPEV2(k_packed_q4_1_p32.data[a_offset + ib].dm);
         case FA_TYPE_Q5_0: return FLOAT_TYPEV2(FLOAT_TYPE(k_packed_q5_0.data[a_offset + ib].d), 0.0);
         case FA_TYPE_Q5_1: return FLOAT_TYPEV2(k_packed_q5_1_p32.data[a_offset + ib].dm);
@@ -74,11 +78,13 @@ void k_block_to_shmem(const uint buf_ib, const uint global_ib, const uint iqs, c
                                                               k_packed_q4_0.data[a_offset + global_ib].qs[iqs * 2 + 1])));
             break;
         }
+#ifdef DEV_HQQ
         case FA_TYPE_Q4_HQQ: {
             kblocksh[buf_ib].qs[iqs] = int32_t(pack32(u16vec2(k_packed_q4_hqq.data[a_offset + global_ib].qs[iqs * 2],
                                                               k_packed_q4_hqq.data[a_offset + global_ib].qs[iqs * 2 + 1])));
             break;
         }
+#endif
         case FA_TYPE_Q4_1: {
             kblocksh[buf_ib].qs[iqs] = int32_t(k_packed_q4_1_p32.data[a_offset + global_ib].qs[iqs]);
             break;
@@ -110,7 +116,9 @@ void k_block_to_shmem(const uint buf_ib, const uint global_ib, const uint iqs, c
         // Q4_0/Q5_0/Q8_0 store dm.x = d; Q4_1/Q5_1 store dm = (d, m) pair.
         switch (FaTypeK) {
             case FA_TYPE_Q4_0: kblocksh[buf_ib].dm = FLOAT_TYPEV2(FLOAT_TYPE(k_packed_q4_0.data[a_offset + global_ib].d), 0.0); break;
+#ifdef DEV_HQQ
             case FA_TYPE_Q4_HQQ: kblocksh[buf_ib].dm = FLOAT_TYPEV2(FLOAT_TYPE(k_packed_q4_hqq.data[a_offset + global_ib].scale), 0.0); break;
+#endif
             case FA_TYPE_Q4_1: kblocksh[buf_ib].dm = FLOAT_TYPEV2(k_packed_q4_1_p32.data[a_offset + global_ib].dm); break;
             case FA_TYPE_Q5_0: kblocksh[buf_ib].dm = FLOAT_TYPEV2(FLOAT_TYPE(k_packed_q5_0.data[a_offset + global_ib].d), 0.0); break;
             case FA_TYPE_Q5_1: kblocksh[buf_ib].dm = FLOAT_TYPEV2(k_packed_q5_1_p32.data[a_offset + global_ib].dm); break;
@@ -150,11 +158,13 @@ fa_k_qs_block8 get_k_qs_block8(uint ib, uint a_offset) {
                                      k_packed_q4_0.data[a_offset + ib].qs[d * 2 + 1]));
                 break;
             }
+#ifdef DEV_HQQ
             case FA_TYPE_Q4_HQQ: { // packed16
                 vui = pack32(u16vec2(k_packed_q4_hqq.data[a_offset + ib].qs[d * 2 + 0],
                                      k_packed_q4_hqq.data[a_offset + ib].qs[d * 2 + 1]));
                 break;
             }
+#endif
             case FA_TYPE_Q4_1: { // packed32 alias
                 vui = k_packed_q4_1_p32.data[a_offset + ib].qs[d];
                 break;
@@ -184,7 +194,9 @@ fa_k_qs_block8 get_k_qs_block8(uint ib, uint a_offset) {
 int32_t get_k_qs_shmem(const uint buf_ib, const uint pos) {
     switch (FaTypeK) {
         case FA_TYPE_Q4_0:
+#ifdef DEV_HQQ
         case FA_TYPE_Q4_HQQ:
+#endif
         case FA_TYPE_Q4_1: {
             uint sub = pos % 4;
             uint shift = ((pos % 8) >= 4) ? 4u : 0u;

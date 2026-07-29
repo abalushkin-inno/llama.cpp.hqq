@@ -78,8 +78,8 @@ void load_a_to_shmem(const uint pos_a, const uint row, const uint col, const uin
             const float scale = float(data_a_packed16[ib].scale);
             const float zero = float(data_a_packed16[ib].zero);
             const uint vui = uint(data_a_packed16[ib].qs[2*iqs]) | (uint(data_a_packed16[ib].qs[2*iqs + 1]) << 16);
-            const vec4 v0 = (vec4(unpack8(vui & 0x0F0F0F0F)) - zero) * scale;
-            const vec4 v1 = (vec4(unpack8((vui >> 4) & 0x0F0F0F0F)) - zero) * scale;
+            const vec4 v0 = vec4(unpack8(vui & 0x0F0F0F0F)) * scale - zero;
+            const vec4 v1 = vec4(unpack8((vui >> 4) & 0x0F0F0F0F)) * scale - zero;
 
             buf_a[buf_idx    ] = FLOAT_TYPEV2(v0.xy);
             buf_a[buf_idx + 1] = FLOAT_TYPEV2(v0.zw);
