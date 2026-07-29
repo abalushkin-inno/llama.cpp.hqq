@@ -27,6 +27,7 @@ static const ftype_name_entry ftype_name_table[] = {
     { "F16",       LLAMA_FTYPE_MOSTLY_F16       },
     { "BF16",      LLAMA_FTYPE_MOSTLY_BF16      },
     { "Q4_0",      LLAMA_FTYPE_MOSTLY_Q4_0      },
+    { "Q4_HQQ",    LLAMA_FTYPE_MOSTLY_Q4_HQQ    },
     { "Q4_1",      LLAMA_FTYPE_MOSTLY_Q4_1      },
     { "Q5_0",      LLAMA_FTYPE_MOSTLY_Q5_0      },
     { "Q5_1",      LLAMA_FTYPE_MOSTLY_Q5_1      },

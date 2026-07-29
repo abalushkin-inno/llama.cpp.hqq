@@ -255,19 +255,18 @@ class Q4_0(__Quant, qtype=GGMLQuantizationType.Q4_0):
 class Q4_HQQ(__Quant, qtype=GGMLQuantizationType.Q4_HQQ):
     @classmethod
     def quantize_blocks(cls, blocks: np.ndarray) -> np.ndarray:
-        # print('!!!!!!!!!!!!!!!!!!!!!!')
         n_blocks = blocks.shape[0]
 
         max = blocks.max(axis=-1, keepdims=True)
         min = blocks.min(axis=-1, keepdims=True)
 
         scale = (max - min) / 15.0
-        scale = np.where(scale == 0, 1, scale)
+        scale = np.where(scale == 0.0, 1.0, scale)
 
         with np.errstate(divide="ignore"):
             iscale = 1 / scale
         zero = -min * iscale
-        qs = np.trunc(((blocks) * iscale + zero) + np.float32(0.5), dtype=np.float32).astype(np.uint8).clip(0, 15)
+        qs = np.trunc(((blocks) * iscale + zero) + np.float32(0.5), dtype=np.float32).clip(0, 15).astype(np.uint8)
 
         qs = qs.reshape((n_blocks, 2, cls.block_size // 2))
         qs = qs[..., 0, :] | (qs[..., 1, :] << np.uint8(4))

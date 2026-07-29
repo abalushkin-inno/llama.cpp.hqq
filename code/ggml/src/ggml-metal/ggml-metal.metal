@@ -296,20 +296,20 @@ void quantize_q4_hqq(device const float * src, device block_q4_hqq & dst) {
             min  = v;
     }
 
-    const float scale = (max-min) / -15.0f;
-    const float iscale = scale ? 1.0f/scale : 1.0f;
+    const float scale = max==min ? 1.0f : (max-min) / -15.0f;
+    const float iscale = 1.0f/scale;
 
-    const float zero  = min * iscale;
+    const float zero  = - min * iscale;
     
     dst.scale = scale;
     dst.zero = zero;
 
     for (int j = 0; j < QK4_HQQ/2; ++j) {
-        const float x0 = src[0       + j]*iscale - zero;
-        const float x1 = src[QK4_HQQ/2 + j]*iscale - zero;
+        const float x0 = src[0       + j]*iscale + zero;
+        const float x1 = src[QK4_HQQ/2 + j]*iscale + zero;
 
-        const uint8_t xi0 = MIN(15, (int8_t)(x0 + 0.5f));
-        const uint8_t xi1 = MIN(15, (int8_t)(x1 + 0.5f));
+        const uint8_t xi0 = MAX(0, MIN(15, (int8_t)(x0 + 0.5f)));
+        const uint8_t xi1 = MAX(0, MIN(15, (int8_t)(x1 + 0.5f)));
 
         dst.qs[j]  = xi0;
         dst.qs[j] |= xi1 << 4;

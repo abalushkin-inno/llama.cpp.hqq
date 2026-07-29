@@ -129,12 +129,12 @@ void quantize_row_q4_hqq_ref(const float * GGML_RESTRICT x, block_q4_hqq * GGML_
                 min = v;
         }
 
-        const float scale  = (max - min) / 15.0f;
-        const float iscale = scale ? 1.0f/scale : 0.0f;
+        const float scale  = max==min ? 1.0 :(max - min) / 15.0f ;
+        const float iscale = scale ? 1.0f/scale : 1.0f;
 
         const float zero  = - min * iscale;
 
-        y[i].scale = GGML_FP32_TO_FP16(scale ? scale : 1.0);
+        y[i].scale = GGML_FP32_TO_FP16(scale);
         y[i].zero = GGML_FP32_TO_FP16(zero);
 
         for (int j = 0; j < qk/2; ++j) {

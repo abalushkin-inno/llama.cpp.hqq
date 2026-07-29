@@ -584,15 +584,17 @@ void ggml_vec_dot_q4_hqq_q8_0(int n, float * GGML_RESTRICT s, size_t bs, const v
         float sumi0 = 0;
         float sumi1 = 0;
 
+        const float zero = GGML_CPU_FP16_TO_FP32(x[ib].zero);
+
         for (int j = 0; j < qk/2; ++j) {
-            const float v0 = (x[ib].qs[j] & 0x0F) - x[ib].zero;
-            const float v1 = (x[ib].qs[j] >>   4) - x[ib].zero;
+            const float v0 = (x[ib].qs[j] & 0x0F) - zero;
+            const float v1 = (x[ib].qs[j] >>   4) - zero;
 
             sumi0 += (v0 * y[ib].qs[j]);
             sumi1 += (v1 * y[ib].qs[j + qk/2]);
         }
 
-        int sumi = sumi0 + sumi1;
+        const float sumi = sumi0 + sumi1;
         sumf += sumi*GGML_CPU_FP16_TO_FP32(x[ib].scale)*GGML_CPU_FP16_TO_FP32(y[ib].d);
     }
 
