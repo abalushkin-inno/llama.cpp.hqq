@@ -1532,10 +1532,11 @@ struct llama_model_params common_model_params_to_llama(common_params & params) {
 
     const bool has_mmproj = !params.mmproj.path.empty();
 
-    if(has_mmproj && !params.mmproj_devices.empty()){
-        mparams.devices = params.mmproj_devices.data();
-    }
-    else if (!params.devices.empty()) {
+    // if(has_mmproj && !params.mmproj_devices.empty()){
+    //     mparams.devices = params.mmproj_devices.data();
+    // }
+    // else 
+    if (!params.devices.empty()) {
         mparams.devices = params.devices.data();
     }
 
