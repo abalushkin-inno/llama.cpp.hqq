@@ -1123,10 +1123,7 @@ private:
                     size_t total = 0;
 
                     std::vector<ggml_backend_dev_t> tgt_devices;
-                    if (has_mmproj && !params.mmproj_devices.empty())
-                        tgt_devices = params.mmproj_devices;
-                    else
-                        tgt_devices = params.devices;
+                    tgt_devices = params.devices;
 
                     if (tgt_devices.empty()) {
                         for(size_t i = 0; i < ggml_backend_dev_count(); ++i) {

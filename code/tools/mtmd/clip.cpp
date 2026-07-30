@@ -180,7 +180,7 @@ struct clip_ctx {
         if (!backend_cpu) {
             throw std::runtime_error("failed to initialize CPU backend");
         }
-        
+
         if (ctx_params.device) {
             backend = ggml_backend_dev_init(*ctx_params.device, nullptr);
             if (!backend) {
