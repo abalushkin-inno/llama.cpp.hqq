@@ -2428,13 +2428,13 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_env("LLAMA_ARG_DEVICE"));
     add_opt(common_arg(
-        {"-mb", "--mmproj-backend"}, "<dev1,dev2,..>",
+        {"-mb", "--mmproj-backend"}, "dev",
         "specific backend for only the multimodal projector\n"
         "use --list-devices to see a list of available devices",
         [](common_params & params, const std::string & value) {
             params.mmproj_devices = parse_device_list(value);
         }
-    ).set_env("LLAMA_ARG_MMBACKEND"));
+    ).set_env("LLAMA_ARG_MMPROJ_BACKEND"));
     add_opt(common_arg(
         {"--list-devices"},
         "print list of available devices and exit",

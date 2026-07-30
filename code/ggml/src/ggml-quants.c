@@ -117,22 +117,22 @@ void quantize_row_q4_hqq_ref(const float * GGML_RESTRICT x, block_q4_hqq * GGML_
     const int nb = k / qk;
 
     for (int i = 0; i < nb; i++) {
-        float min = x[i*qk]; // absolute max
+        float min = x[i*qk];
         float max = x[i*qk];
 
         for (int j = 1; j < qk; j++) {
             const float v = x[i*qk + j];
             if (max < v)
-                max  = v;
+                max = v;
 
             if (min > v)
                 min = v;
         }
 
-        const float scale  = max==min ? 1.0 :(max - min) / 15.0f ;
-        const float iscale = scale ? 1.0f/scale : 1.0f;
+        const float scale = max==min ? 1.0 :(max - min) / 15.0f;
+        const float iscale = 1.0f/scale;
 
-        const float zero  = - min * iscale;
+        const float zero = -min * iscale;
 
         y[i].scale = GGML_FP32_TO_FP16(scale);
         y[i].zero = GGML_FP32_TO_FP16(zero);
@@ -2107,8 +2107,7 @@ static void quantize_row_q4_hqq_impl(const float * GGML_RESTRICT x, block_q4_hqq
         return;
     }
 
-    assert(1==2);
-    // TODO implement quant_weights
+    GGML_ABORT("q4_hqq: imatrix is not supported");
 }
 
 size_t quantize_q1_0(const float * GGML_RESTRICT src, void * GGML_RESTRICT dst, int64_t nrow, int64_t n_per_row, const float * quant_weights) {

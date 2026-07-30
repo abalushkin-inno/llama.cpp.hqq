@@ -296,7 +296,7 @@ void quantize_q4_hqq(device const float * src, device block_q4_hqq & dst) {
             min  = v;
     }
 
-    const float scale = max==min ? 1.0f : (max-min) / -15.0f;
+    const float scale = max==min ? 1.0f : (max-min) / 15.0f;
     const float iscale = 1.0f/scale;
 
     const float zero  = - min * iscale;
@@ -3376,7 +3376,7 @@ inline float block_q_n_dot_y(device const block_q4_0 * qb_curr, float sumy, thre
 }
 
 // function for calculate inner product between half a q4_hqq block and 16 floats (yl), sumy is SUM(yl[i])
-// il indicates where the q4 quants begin (0 or QK4_0/4)
+// il indicates where the q4 quants begin (0 or QK4_HQQ/4)
 // we assume that the yl's have been multiplied with the appropriate scale factor
 // that corresponds to the missing bit shifts (1, 1/16, 1/256, 1/4096)
 inline float block_q_n_dot_y(device const block_q4_hqq * qb_curr, float sumy, thread float * yl, int il) {

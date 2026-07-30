@@ -1530,8 +1530,6 @@ void common_set_adapter_lora(struct llama_context * ctx, std::vector<common_adap
 struct llama_model_params common_model_params_to_llama(common_params & params) {
     auto mparams = llama_model_default_params();
 
-    const bool has_mmproj = !params.mmproj.path.empty();
-
     if (!params.devices.empty()) {
         mparams.devices = params.devices.data();
     }

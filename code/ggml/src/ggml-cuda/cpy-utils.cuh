@@ -47,7 +47,7 @@ static __device__ void quantize_f32_q4_hqq_block(const float * __restrict__ x, b
     float vmax = x[0];
     float vmin = x[0];
 
-    for (int j = 1; j < QK4_0; ++j) {
+    for (int j = 1; j < QK4_HQQ; ++j) {
         const float v = x[j];
         if (vmax < v)
             vmax = v;
@@ -57,14 +57,14 @@ static __device__ void quantize_f32_q4_hqq_block(const float * __restrict__ x, b
     }
 
     const float scale  = (vmax - vmin) / 15;
-    const float iscale = scale ? 1.0f/scale : 0.0f;
+    const float iscale = scale ? 1.0f/scale : 1.0f;
 
     const float zero  = - vmin * iscale;
 
     y->scale = scale;
     y->zero = zero;
 
-    for (int j = 0; j < QK4_0/2; ++j) {
+    for (int j = 0; j < QK4_HQQ/2; ++j) {
         const float x0 = x[0       + j]*iscale + zero;
         const float x1 = x[QK4_0/2 + j]*iscale + zero;
 
@@ -96,8 +96,8 @@ static __device__ void quantize_f32_q4_1_block(const float * __restrict__ x, blo
         const float x0 = (x[0       + j] - vmin)*id;
         const float x1 = (x[QK4_1/2 + j] - vmin)*id;
 
-        const uint8_t xi0 = min(15, (int8_t)(x0 + 0.5f));
-        const uint8_t xi1 = min(15, (int8_t)(x1 + 0.5f));
+        const uint8_t xi0 = max(0, min(15, (int8_t)(x0 + 0.5f)));
+        const uint8_t xi1 = max(0, min(15, (int8_t)(x1 + 0.5f)));
 
         y->qs[j]  = xi0;
         y->qs[j] |= xi1 << 4;

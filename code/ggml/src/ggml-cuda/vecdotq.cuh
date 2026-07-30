@@ -153,7 +153,6 @@ template <int vdr> static __device__ __forceinline__ float vec_dot_q4_hqq_q8_1_i
 
     const float2 ds8f = __half22float2(ds8);
 
-    // second part effectively subtracts 8 from each quant value
     return scale4 * (sumi * ds8f.x - (zero4*vdr/QI4_HQQ) * ds8f.y);
 }
 
@@ -771,10 +770,10 @@ static __device__ __forceinline__ float vec_dot_q4_hqq_q8_1(
     for (int i = 0; i < VDR_Q4_HQQ_Q8_1_MMVQ; ++i) {
         v[i]     = get_int_b2(bq4_hqq->qs, iqs + i);
         u[2*i+0] = get_int_b4(bq8_1->qs, iqs + i);
-        u[2*i+1] = get_int_b4(bq8_1->qs, iqs + i + QI4_0);
+        u[2*i+1] = get_int_b4(bq8_1->qs, iqs + i + QI4_HQQ);
     }
 
-    return vec_dot_q4_hqq_q8_1_impl<VDR_Q4_0_Q8_1_MMVQ>(v, u, bq4_hqq->scale, bq4_hqq->zero, bq8_1->ds);
+    return vec_dot_q4_hqq_q8_1_impl<VDR_Q4_HQQ_Q8_1_MMVQ>(v, u, bq4_hqq->scale, bq4_hqq->zero, bq8_1->ds);
 }
 
 static __device__ __forceinline__ float vec_dot_q4_1_q8_1(

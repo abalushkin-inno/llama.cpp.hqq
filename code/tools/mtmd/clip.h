@@ -56,7 +56,7 @@ struct clip_context_params {
     bool no_alloc;
     mtmd_progress_callback progress_callback;
     void * progress_callback_user_data;
-    ggml_backend_dev_t* device;
+    ggml_backend_dev_t * device;
 };
 
 struct clip_init_result {

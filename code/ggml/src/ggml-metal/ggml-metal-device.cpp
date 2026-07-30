@@ -1035,6 +1035,11 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_mul_mv_id(ggml_m
                 nsg = N_SG_Q4_0;
                 nr0 = N_R0_Q4_0;
             } break;
+        case GGML_TYPE_Q4_HQQ:
+            {
+                nsg = N_SG_Q4_HQQ;
+                nr0 = N_R0_Q4_HQQ;
+            } break;
         case GGML_TYPE_Q4_1:
             {
                 nsg = N_SG_Q4_1;

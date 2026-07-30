@@ -465,12 +465,13 @@ template <int mmq_y, bool need_check> static __device__ __forceinline__ void loa
 
 #if defined(AMD_MFMA_AVAILABLE) || defined(TURING_MMA_AVAILABLE) || defined(AMD_WMMA_AVAILABLE)
     int   * x_qs = (int   *)  x_tile;
-    float * x_df = (float *) (x_qs + 2*MMQ_TILE_NE_K);
+    float * x_scalef = (float *) (x_qs + 2*MMQ_TILE_NE_K);
 #else
     constexpr tile_x_sizes txs = mmq_get_dp4a_tile_x_sizes(GGML_TYPE_Q4_HQQ, mmq_y);
     int   * x_qs = (int   *)  x_tile;
-    float * x_df = (float *) (x_qs + txs.qs);
+    float * x_scalef = (float *) (x_qs + txs.qs);
 #endif // defined(AMD_MFMA_AVAILABLE) || defined(TURING_MMA_AVAILABLE) || defined(AMD_WMMA_AVAILABLE)
+    float * x_zerof = x_scalef + 1;
 
     constexpr int threads_per_row = MMQ_ITER_K / (4 * QR4_HQQ);
     constexpr int nrows = warp_size / threads_per_row;
@@ -490,8 +491,8 @@ template <int mmq_y, bool need_check> static __device__ __forceinline__ void loa
         const int qs0 = get_int_b2(bxi->qs, kqsx);
 
 #if defined(AMD_MFMA_AVAILABLE) || defined(TURING_MMA_AVAILABLE) || defined(AMD_WMMA_AVAILABLE)
-        x_qs[i*MMQ_MMA_TILE_X_K_Q8_0 + kbx*(2*QI4_HQQ) + kqsx + 0]     = __vsubss4((qs0 >> 0) & 0x0F0F0F0F, 0x08080808);
-        x_qs[i*MMQ_MMA_TILE_X_K_Q8_0 + kbx*(2*QI4_HQQ) + kqsx + QI4_HQQ] = __vsubss4((qs0 >> 4) & 0x0F0F0F0F, 0x08080808);
+        x_qs[i*MMQ_MMA_TILE_X_K_Q8_0 + kbx*(2*QI4_HQQ) + kqsx + 0]     = (qs0 >> 0) & 0x0F0F0F0F;
+        x_qs[i*MMQ_MMA_TILE_X_K_Q8_0 + kbx*(2*QI4_HQQ) + kqsx + QI4_HQQ] = (qs0 >> 4) & 0x0F0F0F0F;
 #else
         x_qs[i*(MMQ_TILE_NE_K + 1) + txi] = qs0;
 #endif // defined(AMD_MFMA_AVAILABLE) || defined(TURING_MMA_AVAILABLE)
@@ -512,11 +513,11 @@ template <int mmq_y, bool need_check> static __device__ __forceinline__ void loa
         const block_q4_hqq * bxi = (const block_q4_hqq *) x + kbx0 + i*stride + kbxscale;
 
 #if defined(AMD_MFMA_AVAILABLE) || defined(TURING_MMA_AVAILABLE) || defined(AMD_WMMA_AVAILABLE)
-        x_df[i*MMQ_MMA_TILE_X_K_Q8_0           + kbxscale] = bxi->scale;
-        x_df[i*MMQ_MMA_TILE_X_K_Q8_0           + kbxscale+ 1 ] = bxi->zero;
+        x_scalef[i*MMQ_MMA_TILE_X_K_Q8_0           + kbxscale] = bxi->scale;
+        x_zerof[i*MMQ_MMA_TILE_X_K_Q8_0           + kbxscale ] = bxi->zero;
 #else
-        x_df[i*(MMQ_TILE_NE_K/QI4_HQQ) + i/QI4_HQQ + kbxscale] = bxi->scale;
-        x_df[i*(MMQ_TILE_NE_K/QI4_HQQ) + i/QI4_HQQ + kbxscale + 1] = bxi->zero;
+        x_scalef[i*(MMQ_TILE_NE_K/QI4_HQQ) + i/QI4_HQQ + kbxscale] = bxi->scale;
+        x_zerof[i*(MMQ_TILE_NE_K/QI4_HQQ) + i/QI4_HQQ + kbxscale] = bxi->zero;
 #endif // defined(AMD_MFMA_AVAILABLE) || defined(TURING_MMA_AVAILABLE) || defined(AMD_WMMA_AVAILABLE)
     }
 }
@@ -554,7 +555,7 @@ static __device__ __forceinline__ void vec_dot_q4_0_q8_1_dp4a(
 
                 int tmp0[4], tmp1[4];
 
-                #pragma unroll
+#pragma unroll
                 for (int l0 = 0; l0 < 4 / mcpy_int; ++l0) {
                     ggml_cuda_memcpy_1<max_cpy>(tmp0 + l0 * mcpy_int, &y_qs[j*MMQ_TILE_Y_K + kyqs + l0 * mcpy_int]  );
                     ggml_cuda_memcpy_1<max_cpy>(tmp1 + l0 * mcpy_int, &y_qs[j*MMQ_TILE_Y_K + kyqs + QI4_0 + l0 * mcpy_int]);

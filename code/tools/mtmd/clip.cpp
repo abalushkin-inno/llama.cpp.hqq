@@ -181,10 +181,12 @@ struct clip_ctx {
             throw std::runtime_error("failed to initialize CPU backend");
         }
         
-        if (ctx_params.device){
+        if (ctx_params.device) {
             backend = ggml_backend_dev_init(*ctx_params.device, nullptr);
-        }
-        else if (ctx_params.use_gpu) {
+            if (!backend) {
+                LOG_WRN("%s: Warning: Failed to initialize backend\n", __func__);
+            }
+        } else if (ctx_params.use_gpu) {
             auto * backend_name = std::getenv("MTMD_BACKEND_DEVICE");
             if (backend_name != nullptr) {
                 backend = ggml_backend_init_by_name(backend_name, nullptr);
@@ -225,8 +227,6 @@ struct clip_ctx {
             ggml_backend_sched_set_eval_callback(sched.get(), ctx_params.cb_eval, ctx_params.cb_eval_user_data);
         }
 
-        // backend = nullptr;
-        // backend_cpu = nullptr;
         debug_output_embeddings = std::getenv("MTMD_DEBUG_EMBEDDINGS") != nullptr;
     }
 

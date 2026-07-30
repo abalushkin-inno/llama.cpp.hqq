@@ -194,11 +194,11 @@ static_assert(sizeof(block_q4_0) == sizeof(ggml_half) + QK4_0 / 2, "wrong q4_0 b
 // 4 bits Half-Quadratic Quantization
 #define QK4_HQQ 32 // 32 weights per block
 typedef struct {
-    ggml_half scale; // FP16: (2^4-1) / (max - min)
+    ggml_half scale; // FP16: (max - min) / (2^4-1)
     ggml_half zero; // FP16: -min * scale
-    uint8_t qs[QK4_HQQ/2]; // 4-bit weights, packed 2 per byte
+    uint8_t qs[QK4_HQQ / 2]; // 4-bit weights, packed 2 per byte
 } block_q4_hqq;
-// Total: 2 + 2 + 16 = 20 bytes for 32 weights = 5.0 bpw
+static_assert(sizeof(block_q4_hqq) == 2*sizeof(ggml_half) + QK4_HQQ / 2, "wrong q4_hqq block size/padding");
 
 #define QK4_1 32
 typedef struct {
